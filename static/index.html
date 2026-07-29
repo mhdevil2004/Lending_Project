@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lending — Customer Management Dashboard</title>
+  <meta name="description" content="Manage lending customers with full CRUD, search, pagination, and a premium dark-themed dashboard." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'><path d='M3 21h18'/><path d='M5 21V7l8-4v18'/><path d='M19 21V11l-6-4'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Top bar -->
+<nav class="topbar">
+  <div class="topbar__inner">
+    <span class="topbar__status">
+      <span class="status-dot"></span>
+      System Online
+    </span>
+    <div class="topbar__links">
+      <a href="/docs" target="_blank" class="topbar__link">API Docs</a>
+      <a href="/health" target="_blank" class="topbar__link">Health</a>
+    </div>
+  </div>
+</nav>
+
+<div class="app-container">
+
+  <header class="app-header">
+    <div class="app-header__brand">
+      <div class="app-header__icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+      </div>
+      <div>
+        <h1 class="app-header__title">Lending Portal</h1>
+        <p class="app-header__subtitle">Customer Management for Loan Processing</p>
+      </div>
+    </div>
+    <div class="app-header__actions">
+      <button class="btn btn-secondary" id="btnRefresh" title="Refresh data">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        Refresh
+      </button>
+      <button class="btn btn-primary" id="btnAddCustomer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Add Customer
+      </button>
+    </div>
+  </header>
+
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--purple">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="stat-card__value" id="statTotal">—</div>
+      <div class="stat-card__label">Total Customers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--blue">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+      </div>
+      <div class="stat-card__value" id="statAvgCredit">—</div>
+      <div class="stat-card__label">Avg Credit Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--teal">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="stat-card__value" id="statTotalLoan">—</div>
+      <div class="stat-card__label">Total Loan Amount</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--green">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      </div>
+      <div class="stat-card__value" id="statAvgIncome">—</div>
+      <div class="stat-card__label">Avg Annual Income</div>
+    </div>
+  </div>
+
+  <!-- ── Customer Table ──────────────────────────────────────────────── -->
+  <div class="content-panel">
+    <div class="content-panel__header">
+      <div class="content-panel__title">
+        All Customers <span class="badge" id="customerCount">0</span>
+      </div>
+      <div class="content-panel__search">
+        <div class="search-wrapper">
+          <svg class="search-wrapper__icon icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
+            class="search-input"
+            type="text"
+            id="searchInput"
+            placeholder="Search by name, email, phone…"
+          />
+        </div>
+        <select class="filter-select" id="searchField">
+          <option value="name">Name</option>
+          <option value="email">Email</option>
+          <option value="phone">Phone</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table" id="customerTable">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th>Gender</th>
+            <th>Employment</th>
+            <th>Annual Income</th>
+            <th>Loan Amount</th>
+            <th>Credit Score</th>
+            <th>Location</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customerTableBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-state__icon">
+        <svg class="icon icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+      </div>
+      <div class="empty-state__title">No customers found</div>
+      <div class="empty-state__text">
+        Get started by adding your first lending customer or try a different search.
+      </div>
+      <button class="btn btn-primary" id="btnAddFirstCustomer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Add Customer
+      </button>
+    </div>
+
+    <!-- Loading skeletons -->
+    <div id="loadingState">
+      <div class="skeleton-row"><div class="skeleton skeleton--circle"></div><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton--circle"></div><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton--circle"></div><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton--circle"></div><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton--circle"></div><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div><div class="skeleton skeleton--short"></div></div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+      <div class="pagination__info" id="paginationInfo">Showing 0 results</div>
+      <div class="pagination__controls" id="paginationControls"></div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>Lending Customer Management Service</span>
+    <span class="app-footer__sep">·</span>
+    <span>FastAPI + PostgreSQL</span>
+  </footer>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: Create / Edit Customer
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="customerModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title" id="modalTitle">Add Customer</h2>
+      <button class="modal__close" id="modalClose" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="customerForm" novalidate>
+        <div class="form-grid">
+
+          <!-- Personal Info -->
+          <div class="form-section-title">Personal Information</div>
+
+          <div class="form-group">
+            <label class="form-label" for="firstName">First Name <span class="required">*</span></label>
+            <input class="form-input" type="text" id="firstName" placeholder="Rahul" maxlength="100" />
+            <div class="form-error" id="firstNameError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="lastName">Last Name <span class="required">*</span></label>
+            <input class="form-input" type="text" id="lastName" placeholder="Sharma" maxlength="100" />
+            <div class="form-error" id="lastNameError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email <span class="required">*</span></label>
+            <input class="form-input" type="email" id="email" placeholder="rahul@example.com" />
+            <div class="form-error" id="emailError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone <span class="required">*</span></label>
+            <input class="form-input" type="tel" id="phone" placeholder="+919876543210" maxlength="20" />
+            <div class="form-error" id="phoneError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="dob">Date of Birth <span class="required">*</span></label>
+            <input class="form-input" type="date" id="dob" />
+            <div class="form-error" id="dobError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="gender">Gender <span class="required">*</span></label>
+            <select class="form-select" id="gender">
+              <option value="">Select…</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="form-error" id="genderError"></div>
+          </div>
+
+          <!-- Financial Info -->
+          <div class="form-section-title">Financial Information</div>
+
+          <div class="form-group">
+            <label class="form-label" for="employmentType">Employment Type <span class="required">*</span></label>
+            <select class="form-select" id="employmentType">
+              <option value="">Select…</option>
+              <option value="Salaried">Salaried</option>
+              <option value="Self-Employed">Self-Employed</option>
+              <option value="Business">Business</option>
+              <option value="Unemployed">Unemployed</option>
+              <option value="Retired">Retired</option>
+              <option value="Student">Student</option>
+            </select>
+            <div class="form-error" id="employmentTypeError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="annualIncome">Annual Income (₹) <span class="required">*</span></label>
+            <input class="form-input" type="number" id="annualIncome" placeholder="850000" min="1" step="1000" />
+            <div class="form-error" id="annualIncomeError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="loanAmount">Loan Amount (₹) <span class="required">*</span></label>
+            <input class="form-input" type="number" id="loanAmount" placeholder="500000" min="1" step="1000" />
+            <div class="form-error" id="loanAmountError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="creditScore">Credit Score <span class="required">*</span></label>
+            <input class="form-input" type="number" id="creditScore" placeholder="750" min="300" max="900" />
+            <div class="form-error" id="creditScoreError"></div>
+          </div>
+
+          <!-- Address -->
+          <div class="form-section-title">Address</div>
+
+          <div class="form-group form-group--full">
+            <label class="form-label" for="address">Street Address <span class="required">*</span></label>
+            <input class="form-input" type="text" id="address" placeholder="42 MG Road" maxlength="500" />
+            <div class="form-error" id="addressError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="city">City <span class="required">*</span></label>
+            <input class="form-input" type="text" id="city" placeholder="Bengaluru" maxlength="100" />
+            <div class="form-error" id="cityError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="state">State <span class="required">*</span></label>
+            <input class="form-input" type="text" id="state" placeholder="Karnataka" maxlength="100" />
+            <div class="form-error" id="stateError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="country">Country <span class="required">*</span></label>
+            <input class="form-input" type="text" id="country" placeholder="India" maxlength="100" />
+            <div class="form-error" id="countryError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="postalCode">Postal Code <span class="required">*</span></label>
+            <input class="form-input" type="text" id="postalCode" placeholder="560001" maxlength="20" />
+            <div class="form-error" id="postalCodeError"></div>
+          </div>
+
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalSave">
+        <span id="modalSaveText">Save Customer</span>
+        <div class="spinner" id="modalSpinner" style="display:none;"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: Delete Confirmation
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width: 440px;">
+    <div class="modal__header">
+      <h2 class="modal__title">Delete Customer</h2>
+      <button class="modal__close" id="deleteModalClose" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="delete-confirm">
+        <div class="delete-confirm__icon">
+          <svg class="icon icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        </div>
+        <div class="delete-confirm__title">Are you sure?</div>
+        <div class="delete-confirm__text">
+          This will permanently delete <span class="delete-confirm__name" id="deleteCustomerName"></span>.
+          This action cannot be undone.
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn">
+        <span id="deleteConfirmText">Delete</span>
+        <div class="spinner" id="deleteSpinner" style="display:none;"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
